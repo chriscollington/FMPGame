@@ -4,11 +4,14 @@ using System.Collections.Generic;
 
 /// <summary>
 /// Persistent manager:  
-/// – If the player presses **E** while looking at an object tagged **SceneTrigger**,
+/// • If the player presses **E** while looking at an object tagged **SceneTrigger**,
 ///   load a never‑before‑used random scene in the [minIndex … maxIndex] range  
 ///   (after those are exhausted, load scene 10).  
-/// – If the player presses **E** while looking at an object tagged **scene1**,
-///   load scene 1 immediately.
+/// • If the player presses **E** while looking at an object tagged **scene1**,
+///   load scene 1 immediately.  
+/// • If the player presses **E** while looking at an object tagged **level10**  
+///   (shown only in scene 10), return to scene 0 – the game’s start menu,  
+///   and re‑enable the cursor there.
 /// </summary>
 public class PersistentRandomSceneManager : MonoBehaviour
 {
@@ -17,6 +20,9 @@ public class PersistentRandomSceneManager : MonoBehaviour
 
     [Header("Tag for buttons that reset to scene 1")]
     [SerializeField] private string scene1Tag = "scene1";
+
+    [Header("Tag for the *scene‑10* button that returns to title")]
+    [SerializeField] private string level10Tag = "level10";
 
     [Header("Inclusive build‑index range for random scenes")]
     [SerializeField] private int minIndex = 2;
@@ -29,6 +35,7 @@ public class PersistentRandomSceneManager : MonoBehaviour
 
     private void Awake()
     {
+        // enforce a single persistent instance
         if (FindObjectsOfType<PersistentRandomSceneManager>().Length > 1)
         {
             Destroy(gameObject);
@@ -46,11 +53,26 @@ public class PersistentRandomSceneManager : MonoBehaviour
 
     private void OnDestroy() => SceneManager.sceneLoaded -= OnSceneLoaded;
 
+    // --- scene‑change housekeeping ---
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         mainCam = Camera.main;
+
+        if (scene.buildIndex == 0)
+        {
+            // Title / menu scene → show and unlock the cursor
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+        }
+        else
+        {
+            // Gameplay scenes → hide and lock cursor (feel free to adjust)
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+        }
     }
 
+    // --- per‑frame input check ---
     private void Update()
     {
         if (!Input.GetKeyDown(KeyCode.E) || mainCam == null) return;
@@ -58,6 +80,7 @@ public class PersistentRandomSceneManager : MonoBehaviour
         Ray ray = mainCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
         if (!Physics.Raycast(ray, out RaycastHit hit, 5f)) return;
 
+        // ---------- tag checks ----------
         if (hit.transform.CompareTag(triggerTag))
         {
             TryLoadNextScene();
@@ -66,13 +89,19 @@ public class PersistentRandomSceneManager : MonoBehaviour
         {
             SceneManager.LoadScene(1);
         }
+        else if (hit.transform.CompareTag(level10Tag))
+        {
+            SceneManager.LoadScene(0);   // back to title / scene 0
+            usedScenes.Clear();          // optional: reset the history
+            // Cursor will be restored by OnSceneLoaded callback
+        }
     }
 
     // -------- core logic --------
     private void TryLoadNextScene()
     {
         int next = GetUnusedRandomScene();
-        if (next == -1) return;                     // safety
+        if (next == -1) return; // safety
 
         usedScenes.Add(next);
         SceneManager.LoadScene(next);
@@ -89,7 +118,7 @@ public class PersistentRandomSceneManager : MonoBehaviour
             if (!usedScenes.Contains(i)) unused.Add(i);
 
         if (unused.Count == 0)
-            return 10;                             // finale scene
+            return 10; // finale scene
 
         return unused[Random.Range(0, unused.Count)];
     }
