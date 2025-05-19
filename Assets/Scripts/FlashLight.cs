@@ -48,6 +48,10 @@ public class FlashLight : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.F))
         {
+            // Prevent turning on the flashlight if the battery is depleted
+            if (!flashlightActive && currentBatteryHealth <= 0f)
+                return;
+
             flashlightActive = !flashlightActive;
             flashlightLight.SetActive(flashlightActive);
         }
