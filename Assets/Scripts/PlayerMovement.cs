@@ -32,16 +32,16 @@ public class PlayerMovement : MonoBehaviour
     void Update()
     {
         // Check if the game is paused
-       /* if (PauseMenu.isPaused)
+        if (PauseMenu.isPaused)
         {
-            // When the game is paused, we want to stop movement and allow the mouse to move freely for menu interaction
+            // When the game is paused, we stop movement and allow the mouse to move freely for menu interaction
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true; // Show the cursor when paused
             return;
         }
-        else*/
+        else
         {
-            // When the game is not paused, hide the cursor and lock it to the screen
+            // When the game is not paused, lock the cursor and hide it
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
         }

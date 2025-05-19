@@ -2,23 +2,12 @@
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 
-/// <summary>
-/// Persistent manager:  
-/// • If the player presses **E** while looking at an object tagged **SceneTrigger**,
-///   load a never‑before‑used random scene in the [minIndex … maxIndex] range  
-///   (after those are exhausted, load scene 10).  
-/// • If the player presses **E** while looking at an object tagged **scene1**,
-///   load scene 1 immediately.  
-/// • If the player presses **E** while looking at an object tagged **level10**  
-///   (shown only in scene 10), return to scene 0 – the game’s start menu,  
-///   and re‑enable the cursor there.
-/// </summary>
 public class PersistentRandomSceneManager : MonoBehaviour
 {
     [Header("Tag for random‑scene buttons")]
     [SerializeField] private string triggerTag = "SceneTrigger";
 
-    [Header("Tag for buttons that reset to scene 1")]
+    [Header("Tag for buttons that reset to scene 1")]
     [SerializeField] private string scene1Tag = "scene1";
 
     [Header("Tag for the *scene‑10* button that returns to title")]
@@ -87,7 +76,8 @@ public class PersistentRandomSceneManager : MonoBehaviour
         }
         else if (hit.transform.CompareTag(scene1Tag))
         {
-            SceneManager.LoadScene(1);
+            ResetSceneHistory(); // Reset used scenes when hitting scene 1
+            SceneManager.LoadScene(1); // Load scene 1 immediately
         }
         else if (hit.transform.CompareTag(level10Tag))
         {
@@ -105,6 +95,14 @@ public class PersistentRandomSceneManager : MonoBehaviour
 
         usedScenes.Add(next);
         SceneManager.LoadScene(next);
+    }
+
+    /// <summary>
+    /// Resets the used scenes so that the random scene selection can start over from 2-9.
+    /// </summary>
+    private void ResetSceneHistory()
+    {
+        usedScenes.Clear(); // Clear previously used scenes
     }
 
     /// <summary>

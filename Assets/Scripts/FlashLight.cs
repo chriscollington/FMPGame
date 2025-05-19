@@ -23,7 +23,12 @@ public class FlashLight : MonoBehaviour
     void Start()
     {
         flashlightLight.gameObject.SetActive(false);
-        currentBatteryHealth = maxBatteryHealth;
+
+        // Load saved battery value or initialize if unset
+        if (BatteryData.currentBatteryHealth >= 0f)
+            currentBatteryHealth = BatteryData.currentBatteryHealth;
+        else
+            currentBatteryHealth = maxBatteryHealth;
 
         if (batteryHealthSlider != null)
         {
@@ -89,6 +94,12 @@ public class FlashLight : MonoBehaviour
                 }
             }
         }
+    }
+
+    void OnDisable()
+    {
+        // Save battery value before switching scenes or destroying the object
+        BatteryData.currentBatteryHealth = currentBatteryHealth;
     }
 
     private void OnDrawGizmosSelected()
