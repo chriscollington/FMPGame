@@ -8,6 +8,7 @@ TagManager:
   - SceneTrigger
   - scene1
   - level10
+  - LevelText
   layers:
   - Default
   - TransparentFX

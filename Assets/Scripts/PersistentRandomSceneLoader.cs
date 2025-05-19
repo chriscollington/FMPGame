@@ -1,13 +1,15 @@
 ﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
+using TMPro;                 // If you use legacy UI.Text, swap to UnityEngine.UI
 
 public class PersistentRandomSceneManager : MonoBehaviour
 {
+    // ---------- Inspector fields ----------
     [Header("Tag for random‑scene buttons")]
     [SerializeField] private string triggerTag = "SceneTrigger";
 
-    [Header("Tag for buttons that reset to scene 1")]
+    [Header("Tag for buttons that reset to scene 1")]
     [SerializeField] private string scene1Tag = "scene1";
 
     [Header("Tag for the *scene‑10* button that returns to title")]
@@ -15,16 +17,22 @@ public class PersistentRandomSceneManager : MonoBehaviour
 
     [Header("Inclusive build‑index range for random scenes")]
     [SerializeField] private int minIndex = 2;
-    [SerializeField] private int maxIndex = 9;   // 10 is the finale
+    [SerializeField] private int maxIndex = 9;   // scene 10 is the finale
 
-    // ---- shared across the whole session ----
+    // Cached at runtime (found fresh in every scene)
+    private TextMeshProUGUI levelText;           // or UnityEngine.UI.Text
+
+    // ---------- persistent state ----------
     private static readonly HashSet<int> usedScenes = new HashSet<int>();
+    private static int currentLevel = 1;         // logical counter 1‑10
 
     private Camera mainCam;
 
+    // =========================================================
+    #region Unity callbacks
     private void Awake()
     {
-        // enforce a single persistent instance
+        // Singleton guard
         if (FindObjectsOfType<PersistentRandomSceneManager>().Length > 1)
         {
             Destroy(gameObject);
@@ -32,92 +40,111 @@ public class PersistentRandomSceneManager : MonoBehaviour
         }
 
         DontDestroyOnLoad(gameObject);
+
         mainCam = Camera.main;
         SceneManager.sceneLoaded += OnSceneLoaded;
 
+        // Clamp inspector range
         int lastBuild = SceneManager.sceneCountInBuildSettings - 1;
         maxIndex = Mathf.Clamp(maxIndex, minIndex, lastBuild);
         minIndex = Mathf.Clamp(minIndex, 0, maxIndex);
+
+        // Find the label in the starting scene (scene 0)
+        levelText = GameObject.FindGameObjectWithTag("LevelText")
+                              ?.GetComponent<TextMeshProUGUI>();
+
+        UpdateLevelUI(); // show "Level 1"
     }
 
-    private void OnDestroy() => SceneManager.sceneLoaded -= OnSceneLoaded;
+    private void OnDestroy() =>
+        SceneManager.sceneLoaded -= OnSceneLoaded;
 
-    // --- scene‑change housekeeping ---
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
         mainCam = Camera.main;
 
+        // Cursor policy
         if (scene.buildIndex == 0)
         {
-            // Title / menu scene → show and unlock the cursor
             Cursor.visible = true;
             Cursor.lockState = CursorLockMode.None;
         }
         else
         {
-            // Gameplay scenes → hide and lock cursor (feel free to adjust)
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
         }
-    }
 
-    // --- per‑frame input check ---
+        // -------- NEW: re‑grab the label in this scene --------
+        levelText = GameObject.FindGameObjectWithTag("LevelText")
+                              ?.GetComponent<TextMeshProUGUI>();
+        // ------------------------------------------------------
+
+        UpdateLevelUI();
+    }
+    #endregion
+    // =========================================================
+
     private void Update()
     {
         if (!Input.GetKeyDown(KeyCode.E) || mainCam == null) return;
 
-        Ray ray = mainCam.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
+        Ray ray = mainCam.ViewportPointToRay(new Vector3(0.5f, 0.5f));
         if (!Physics.Raycast(ray, out RaycastHit hit, 5f)) return;
 
-        // ---------- tag checks ----------
         if (hit.transform.CompareTag(triggerTag))
         {
             TryLoadNextScene();
         }
         else if (hit.transform.CompareTag(scene1Tag))
         {
-            ResetSceneHistory(); // Reset used scenes when hitting scene 1
-            SceneManager.LoadScene(1); // Load scene 1 immediately
+            ResetProgression();
+            SceneManager.LoadScene(1);              // straight to scene 1
         }
         else if (hit.transform.CompareTag(level10Tag))
         {
-            SceneManager.LoadScene(0);   // back to title / scene 0
-            usedScenes.Clear();          // optional: reset the history
-            // Cursor will be restored by OnSceneLoaded callback
+            SceneManager.LoadScene(0);              // back to title
+            usedScenes.Clear();
+            currentLevel = 1;                       // optional: reset on menu
         }
     }
 
-    // -------- core logic --------
+    // =========================================================
+    // ---------------- core logic -----------------------------
     private void TryLoadNextScene()
     {
         int next = GetUnusedRandomScene();
-        if (next == -1) return; // safety
+        if (next == -1) return;
 
         usedScenes.Add(next);
+
+        currentLevel = Mathf.Clamp(currentLevel + 1, 1, 10);
+        if (next == 10) currentLevel = 10;          // finale always shows 10
+
+        UpdateLevelUI();
         SceneManager.LoadScene(next);
     }
 
-    /// <summary>
-    /// Resets the used scenes so that the random scene selection can start over from 2-9.
-    /// </summary>
-    private void ResetSceneHistory()
+    private void ResetProgression()
     {
-        usedScenes.Clear(); // Clear previously used scenes
+        usedScenes.Clear();
+        currentLevel = 1;
+        UpdateLevelUI();
     }
 
-    /// <summary>
-    /// Returns an unused random scene index within the range; when exhausted,
-    /// always returns 10.
-    /// </summary>
     private int GetUnusedRandomScene()
     {
         List<int> unused = new List<int>();
         for (int i = minIndex; i <= maxIndex; i++)
             if (!usedScenes.Contains(i)) unused.Add(i);
 
-        if (unused.Count == 0)
-            return 10; // finale scene
+        return (unused.Count == 0) ? 10
+                                   : unused[Random.Range(0, unused.Count)];
+    }
 
-        return unused[Random.Range(0, unused.Count)];
+    private void UpdateLevelUI()
+    {
+        if (levelText != null)
+            levelText.text = $"Level {currentLevel}";
     }
 }
