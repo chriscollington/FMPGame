@@ -432,16 +432,17 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: This game is about paradoxical insomnia where the player thinks they are
+  m_text: "This game is about paradoxical insomnia where the player thinks they are
     awake when in reality they are not. You have to go around finding all the anomalies.
     Level One is the normal room with no anomalies. You have a flashlight that u
-    can use with the button "F" but just be careful it can die. To recharge it find
-    batteries around the house and press "E" to collect them. There is a green and
-    red button on the wall green means yes anomaly and red means no anomaly press
-    "E" on either one to  what you think the level is if wrong you will be put at
-    level One again.   Press "ESC" in game to go to the pause menu. It is buggy when
-    you leave the pause menu press "ESC" 1x after exiting and you will be able to
-    move.
+    can use with the button \"F\" but just be careful it can die. To recharge it
+    find batteries around the house and press \"E\" to collect them. There is a green
+    and red button on the wall green means yes anomaly and red means no anomaly press
+    \"E\" on either one to  what you think the level is if wrong you will be put
+    at level One again.   Press \"ESC\" in game to go to the pause menu. It is buggy
+    when you leave the pause menu press \"ESC\" 1x after exiting and you will be
+    able to move. \n\nWASD or arrow keys to move \nC to crouch \nF for flashlight
+    \nE to interact\nShift to sprint"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -468,8 +469,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 45.2
-  m_fontSizeBase: 45.2
+  m_fontSize: 39.4
+  m_fontSizeBase: 39.4
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
